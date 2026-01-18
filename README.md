@@ -1,16 +1,20 @@
-# daily_coding_questions_app
+# Daily Coding Challenge App 🚀
 
-A new Flutter project.
+A minimal, distraction-free mobile app built with **Flutter** & **Firebase** that serves one coding problem per day.
 
-## Getting Started
+## Features
+* **Daily Lock:** Fetches a unique question based on the current date (YYYY-MM-DD).
+* **Streak Tracking:** Tracks consecutive days of coding.
+* **Secure Auth:** Firebase Authentication (Email/Password).
+* **Analytics:** Visual history of the last 7 days.
+* **Clean UI:** Markdown rendering for code blocks.
 
-This project is a starting point for a Flutter application.
+## Tech Stack
+* **Frontend:** Flutter
+* **Backend:** Firebase Firestore & Auth
+* **State Management:** Provider
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## How to Run
+1.  Clone the repo.
+2.  Run `flutter pub get`.
+3.  Run `flutter run`.

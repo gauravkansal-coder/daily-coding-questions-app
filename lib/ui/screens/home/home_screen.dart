@@ -5,6 +5,7 @@ import 'package:daily_coding_questions_app/providers/auth_provider.dart';
 import 'package:daily_coding_questions_app/providers/question_provider.dart';
 import 'package:daily_coding_questions_app/services/firestore_service.dart';
 import 'package:daily_coding_questions_app/ui/screens/home/problem_view.dart';
+import 'package:daily_coding_questions_app/ui/screens/profile/stats_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -14,16 +15,13 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // We don't need initState or _loadData anymore because
-  // the StreamBuilder + addPostFrameCallback handles the loading logic automatically.
-
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context);
     final questionProv = Provider.of<QuestionProvider>(context);
 
+    // Listen to the user's streak and solved history in real-time
     return StreamBuilder<UserModel>(
-      // Listen to the user's streak and solved history in real-time
       stream: FirestoreService().getUserStream(auth.user?.uid ?? ''),
       builder: (context, snapshot) {
         // 1. Check for Errors
@@ -41,6 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
         final user = snapshot.data;
 
         // 3. Logic Trigger: Once User loads, fetch the Question (if missing)
+        // We use addPostFrameCallback to avoid "SetState during build" errors
         if (user != null &&
             questionProv.todayQuestion == null &&
             !questionProv.isLoading) {
@@ -53,24 +52,50 @@ class _HomeScreenState extends State<HomeScreen> {
           appBar: AppBar(
             title: const Text("Daily Challenge"),
             actions: [
-              // Streak Badge
+              // STREAK BADGE (Clickable)
               if (user != null)
                 Padding(
-                  padding: const EdgeInsets.only(right: 16.0),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.local_fire_department,
-                          color: Colors.orange),
-                      const SizedBox(width: 4),
-                      Text(
-                        "${user.currentStreak}",
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 18),
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: InkWell(
+                    onTap: () {
+                      // Navigate to the Analytics/Stats Screen
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => StatsScreen(user: user),
+                        ),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade100,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.orange),
                       ),
-                    ],
+                      child: Row(
+                        children: [
+                          const Icon(Icons.local_fire_department,
+                              color: Colors.deepOrange, size: 20),
+                          const SizedBox(width: 4),
+                          Text(
+                            "${user.currentStreak}",
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.deepOrange,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-              // Logout
+
+              // LOGOUT BUTTON
               IconButton(
                 icon: const Icon(Icons.logout),
                 onPressed: () => auth.signOut(),
@@ -83,25 +108,33 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // Helper to switch between Loading, Empty, and Problem View
   Widget _buildBody(QuestionProvider provider, UserModel? user) {
+    // A. Loading State
     if (provider.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
+    // B. No Question Found (Rest Day or Admin forgot to post)
     if (provider.todayQuestion == null) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.bedtime, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
-            Text("No question for today yet!"),
-            Text("Check back later."),
+            Icon(Icons.bedtime, size: 80, color: Colors.blueGrey.shade200),
+            const SizedBox(height: 16),
+            const Text(
+              "No question for today!",
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            const Text("Check back tomorrow to keep your streak."),
           ],
         ),
       );
     }
 
+    // C. Question Loaded -> Show Problem View
     return ProblemView(
       question: provider.todayQuestion!,
       isSolved: provider.isSolvedToday,

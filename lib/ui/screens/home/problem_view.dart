@@ -120,7 +120,7 @@ class _ProblemViewState extends State<ProblemView> {
                       Icon(Icons.check_circle, color: Colors.green),
                       SizedBox(width: 8),
                       Text(
-                        "Problem marked as completed!",
+                        "Answer Submitted! Solution Unlocked.",
                         style: TextStyle(
                             fontWeight: FontWeight.bold, color: Colors.green),
                       ),
