@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "520529142503",
+    "project_id": "daily-coding-questions-app",
+    "storage_bucket": "daily-coding-questions-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:520529142503:android:49fe028ea1041074727842",
+        "android_client_info": {
+          "package_name": "com.example.daily_coding_questions_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDpRfaNYIUyVAN8j4ej0oV6FrgASi2ErZM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
