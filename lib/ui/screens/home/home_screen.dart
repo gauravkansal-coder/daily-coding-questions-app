@@ -39,7 +39,6 @@ class _HomeScreenState extends State<HomeScreen> {
         final user = snapshot.data;
 
         // 3. Logic Trigger: Once User loads, fetch the Question (if missing)
-        // We use addPostFrameCallback to avoid "SetState during build" errors
         if (user != null &&
             questionProv.todayQuestion == null &&
             !questionProv.isLoading) {
@@ -58,7 +57,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   padding: const EdgeInsets.only(right: 8.0),
                   child: InkWell(
                     onTap: () {
-                      // Navigate to the Analytics/Stats Screen
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -98,7 +96,13 @@ class _HomeScreenState extends State<HomeScreen> {
               // LOGOUT BUTTON
               IconButton(
                 icon: const Icon(Icons.logout),
-                onPressed: () => auth.signOut(),
+                onPressed: () {
+                  // FIX: Clear the question data from memory BEFORE signing out
+                  // This ensures the next user doesn't see the old user's "Solved" screen.
+                  Provider.of<QuestionProvider>(context, listen: false)
+                      .clearState();
+                  auth.signOut();
+                },
               ),
             ],
           ),
@@ -108,14 +112,13 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Helper to switch between Loading, Empty, and Problem View
   Widget _buildBody(QuestionProvider provider, UserModel? user) {
     // A. Loading State
     if (provider.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    // B. No Question Found (Rest Day or Admin forgot to post)
+    // B. No Question Found (Rest Day)
     if (provider.todayQuestion == null) {
       return Center(
         child: Column(

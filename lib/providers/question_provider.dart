@@ -7,7 +7,6 @@ class QuestionProvider with ChangeNotifier {
   final FirestoreService _firestoreService = FirestoreService();
 
   Question? _todayQuestion;
-  // FIX: Start as false so the UI can trigger the first load
   bool _isLoading = false;
   bool _isSolvedToday = false;
 
@@ -50,6 +49,14 @@ class QuestionProvider with ChangeNotifier {
 
     // Update local state immediately for UI feedback
     _isSolvedToday = true;
+    notifyListeners();
+  }
+
+  // CRITICAL FIX: Reset everything when logging out
+  void clearState() {
+    _todayQuestion = null;
+    _isLoading = false;
+    _isSolvedToday = false;
     notifyListeners();
   }
 }
