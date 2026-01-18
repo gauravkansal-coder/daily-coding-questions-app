@@ -7,48 +7,48 @@ class QuestionProvider with ChangeNotifier {
   final FirestoreService _firestoreService = FirestoreService();
 
   Question? _todayQuestion;
-  bool _isLoading = true;
-  bool _isSolvedToday = false; // Tracks if user already finished today's task
+  // FIX: Start as false so the UI can trigger the first load
+  bool _isLoading = false;
+  bool _isSolvedToday = false;
 
-  // Getters (So UI can read data but not change it directly)
   Question? get todayQuestion => _todayQuestion;
   bool get isLoading => _isLoading;
   bool get isSolvedToday => _isSolvedToday;
 
-  // ---------------------------------------------------------------------------
-  // 1. Load Data (Called when App Starts)
-  // ---------------------------------------------------------------------------
-  Future<void> loadDailyQuestion(UserModel? user) async {
+  // Load Data
+  Future<void> loadDailyQuestion(UserModel user) async {
+    // Prevent double loading
+    if (_isLoading) return;
+
     _isLoading = true;
-    notifyListeners(); // Tells UI to show "Loading..."
+    notifyListeners();
 
     try {
-      // Fetch Question
       _todayQuestion = await _firestoreService.getTodaysQuestion();
 
-      // Check if user has already solved it
-      if (_todayQuestion != null && user != null) {
-        // We check if the Question ID (the Date) is in the user's solved list
+      if (_todayQuestion != null) {
+        // Check if the user already solved this specific question ID
         _isSolvedToday = user.solvedQuestionIds.contains(_todayQuestion!.id);
+      } else {
+        // No question found for today
+        _isSolvedToday = false;
       }
     } catch (e) {
       print("Error loading question: $e");
     } finally {
       _isLoading = false;
-      notifyListeners(); // Tells UI to show the content
+      notifyListeners();
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // 2. Submit Answer
-  // ---------------------------------------------------------------------------
+  // Submit Answer
   Future<void> submitAnswer(String uid) async {
     if (_todayQuestion == null) return;
 
-    // 1. Update backend (Streak + Solved List)
+    // Update backend
     await _firestoreService.submitSolutionAndStreak(uid, _todayQuestion!.id);
 
-    // 2. Update local state immediately so UI updates (Green Checkmark)
+    // Update local state immediately for UI feedback
     _isSolvedToday = true;
     notifyListeners();
   }
