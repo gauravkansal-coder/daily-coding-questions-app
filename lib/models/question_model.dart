@@ -1,44 +1,52 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Question {
-  final String id;
-  final String title;
-  final String description;
-  final String difficulty;
-  final List<String> tags;
-  final String? solution;
-  final DateTime createdAt;
+  final String id; // This will be the date, e.g., "2026-01-18"
+  final String title; // e.g., "Two Sum"
+  final String description; // The full problem statement in Markdown
+  final String difficulty; // "Easy", "Medium", or "Hard"
+  final String topic; // e.g., "Arrays", "DP"
+  final String starterCode; // e.g., "void main() { ... }"
+  final String solution; // The hidden answer (Markdown)
 
   Question({
     required this.id,
     required this.title,
     required this.description,
     required this.difficulty,
-    required this.tags,
-    this.solution,
-    required this.createdAt,
+    required this.topic,
+    required this.starterCode,
+    required this.solution,
   });
 
-  // Convert Firestore document to Question object
-  factory Question.fromFirestore(Map<String, dynamic> data, String id) {
+  // -----------------------------------------------------------------------------
+  // Factory Constructor: Converts a Firebase Document into a Dart Object
+  // -----------------------------------------------------------------------------
+  factory Question.fromFirestore(DocumentSnapshot doc) {
+    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+
     return Question(
-      id: id,
-      title: data['title'] as String? ?? '',
-      description: data['description'] as String? ?? '',
-      difficulty: data['difficulty'] as String? ?? 'Medium',
-      tags: List<String>.from(data['tags'] as List? ?? []),
-      solution: data['solution'] as String?,
-      createdAt: (data['createdAt'] as DateTime?) ?? DateTime.now(),
+      id: doc.id, // We use the document ID (the date) as our ID
+      title: data['title'] ?? 'Untitled Question',
+      description: data['description'] ?? '',
+      difficulty: data['difficulty'] ?? 'Medium',
+      topic: data['topic'] ?? 'General',
+      starterCode: data['starterCode'] ?? '',
+      solution: data['solution'] ?? '',
     );
   }
 
-  // Convert Question object to Firestore document
-  Map<String, dynamic> toFirestore() {
+  // -----------------------------------------------------------------------------
+  // Method: Converts our Dart Object back to a Map (Useful for Admin/Uploading)
+  // -----------------------------------------------------------------------------
+  Map<String, dynamic> toMap() {
     return {
       'title': title,
       'description': description,
       'difficulty': difficulty,
-      'tags': tags,
+      'topic': topic,
+      'starterCode': starterCode,
       'solution': solution,
-      'createdAt': createdAt,
     };
   }
 }
