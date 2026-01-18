@@ -17,10 +17,7 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web - '
-        'you can reconfigure this by running the FlutterFire CLI again.',
-      );
+      return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -28,15 +25,9 @@ class DefaultFirebaseOptions {
       case TargetPlatform.iOS:
         return ios;
       case TargetPlatform.macOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for macos - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return macos;
       case TargetPlatform.windows:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for windows - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return windows;
       case TargetPlatform.linux:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for linux - '
@@ -65,4 +56,34 @@ class DefaultFirebaseOptions {
     storageBucket: 'daily-coding-questions-app.firebasestorage.app',
     iosBundleId: 'com.example.dailyCodingQuestionsApp',
   );
+
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyAmqq7Yzf9QQsofwu8kYMByEujcsBgcon4',
+    appId: '1:520529142503:web:b9d3703ba5e4b8d6727842',
+    messagingSenderId: '520529142503',
+    projectId: 'daily-coding-questions-app',
+    authDomain: 'daily-coding-questions-app.firebaseapp.com',
+    storageBucket: 'daily-coding-questions-app.firebasestorage.app',
+    measurementId: 'G-5V0YSN1X5H',
+  );
+
+  static const FirebaseOptions macos = FirebaseOptions(
+    apiKey: 'AIzaSyAL5baOg_IKs0w0qSDv0NvPq9AKq9b36os',
+    appId: '1:520529142503:ios:41fb1f41a871a6fb727842',
+    messagingSenderId: '520529142503',
+    projectId: 'daily-coding-questions-app',
+    storageBucket: 'daily-coding-questions-app.firebasestorage.app',
+    iosBundleId: 'com.example.dailyCodingQuestionsApp',
+  );
+
+  static const FirebaseOptions windows = FirebaseOptions(
+    apiKey: 'AIzaSyAmqq7Yzf9QQsofwu8kYMByEujcsBgcon4',
+    appId: '1:520529142503:web:1251110b0d175647727842',
+    messagingSenderId: '520529142503',
+    projectId: 'daily-coding-questions-app',
+    authDomain: 'daily-coding-questions-app.firebaseapp.com',
+    storageBucket: 'daily-coding-questions-app.firebasestorage.app',
+    measurementId: 'G-SRD7RG42E0',
+  );
+
 }

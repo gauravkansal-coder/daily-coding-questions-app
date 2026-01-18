@@ -14,18 +14,28 @@ class FirestoreService {
     String todayDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
 
     try {
+      print('🔍 Looking for question with date: $todayDate');
+      
       // We look for a document ID that matches today's date
       DocumentSnapshot doc =
           await _db.collection('questions').doc(todayDate).get();
 
       if (doc.exists) {
+        print('✅ Question found! Data: ${doc.data()}');
         return Question.fromFirestore(doc);
       } else {
-        // If no question is found for today, return null (App should show "Rest Day")
+        print('❌ No question found for date: $todayDate');
+        print('📋 Available question docs: ');
+        // List all docs to debug
+        var snapshot = await _db.collection('questions').get();
+        for (var doc in snapshot.docs) {
+          print('  - ${doc.id}');
+        }
         return null;
       }
     } catch (e) {
-      print("Error fetching question: $e");
+      print("❌ Error fetching question: $e");
+      print("Stack trace: $e");
       return null;
     }
   }
