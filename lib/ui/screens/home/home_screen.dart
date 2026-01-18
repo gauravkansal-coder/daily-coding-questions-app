@@ -39,6 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
         final user = snapshot.data;
 
         // 3. Logic Trigger: Once User loads, fetch the Question (if missing)
+        // We use addPostFrameCallback to avoid "SetState during build" errors
         if (user != null &&
             questionProv.todayQuestion == null &&
             !questionProv.isLoading) {
@@ -57,6 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   padding: const EdgeInsets.only(right: 8.0),
                   child: InkWell(
                     onTap: () {
+                      // Navigate to the Analytics/Stats Screen
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -97,8 +99,7 @@ class _HomeScreenState extends State<HomeScreen> {
               IconButton(
                 icon: const Icon(Icons.logout),
                 onPressed: () {
-                  // FIX: Clear the question data from memory BEFORE signing out
-                  // This ensures the next user doesn't see the old user's "Solved" screen.
+                  // Clear state to prevent data leaking to next user
                   Provider.of<QuestionProvider>(context, listen: false)
                       .clearState();
                   auth.signOut();
@@ -112,6 +113,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // Helper to switch between Loading, Empty, and Problem View
   Widget _buildBody(QuestionProvider provider, UserModel? user) {
     // A. Loading State
     if (provider.isLoading) {
@@ -138,13 +140,19 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     // C. Question Loaded -> Show Problem View
+    // We force unwrap user (user!) because we know it exists if we are here
+    // (StreamBuilder handles the null/loading cases above).
     return ProblemView(
       question: provider.todayQuestion!,
       isSolved: provider.isSolvedToday,
+      user: user!,
       onSolve: () {
-        if (user != null) {
-          provider.submitAnswer(user.uid);
-        }
+        // No need to check if user != null, Dart knows it's safe now
+        provider.submitAnswer(user.uid);
+      },
+      onBookmark: (questionId) async {
+        // Toggle bookmark logic
+        await FirestoreService().toggleBookmark(user.uid, questionId);
       },
     );
   }

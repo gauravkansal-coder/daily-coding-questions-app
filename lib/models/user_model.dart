@@ -6,8 +6,9 @@ class UserModel {
   final String username;
   final int currentStreak;
   final int longestStreak;
-  final String lastSolvedDate; // Stores the date as "YYYY-MM-DD"
-  final List<String> solvedQuestionIds; // Keeps track of which days are done
+  final String lastSolvedDate;
+  final List<String> solvedQuestionIds;
+  final List<String> bookmarkedQuestionIds; // <--- NEW FIELD
 
   UserModel({
     required this.uid,
@@ -17,29 +18,25 @@ class UserModel {
     required this.longestStreak,
     required this.lastSolvedDate,
     required this.solvedQuestionIds,
+    required this.bookmarkedQuestionIds, // <--- Add to constructor
   });
 
-  // -----------------------------------------------------------------------------
-  // Factory Constructor: Firestore Document -> Dart Object
-  // -----------------------------------------------------------------------------
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
-    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-
+    Map data = doc.data() as Map<String, dynamic>;
     return UserModel(
       uid: doc.id,
       email: data['email'] ?? '',
-      username: data['username'] ?? 'Coder',
+      username: data['username'] ?? '',
       currentStreak: data['currentStreak'] ?? 0,
       longestStreak: data['longestStreak'] ?? 0,
       lastSolvedDate: data['lastSolvedDate'] ?? '',
-      // Firestore stores lists as List<dynamic>, so we must cast it to List<String>
       solvedQuestionIds: List<String>.from(data['solvedQuestionIds'] ?? []),
+      // Safely load the bookmarks list
+      bookmarkedQuestionIds:
+          List<String>.from(data['bookmarkedQuestionIds'] ?? []),
     );
   }
 
-  // -----------------------------------------------------------------------------
-  // Method: Dart Object -> Map (Used when Registering a new user)
-  // -----------------------------------------------------------------------------
   Map<String, dynamic> toMap() {
     return {
       'email': email,
@@ -48,6 +45,7 @@ class UserModel {
       'longestStreak': longestStreak,
       'lastSolvedDate': lastSolvedDate,
       'solvedQuestionIds': solvedQuestionIds,
+      'bookmarkedQuestionIds': bookmarkedQuestionIds, // <--- Save it back
     };
   }
 }

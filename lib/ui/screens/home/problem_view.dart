@@ -1,17 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:daily_coding_questions_app/models/question_model.dart';
+import 'package:daily_coding_questions_app/models/user_model.dart';
 
 class ProblemView extends StatefulWidget {
   final Question question;
   final bool isSolved;
   final VoidCallback onSolve;
+  final UserModel user;
+  final Function(String) onBookmark;
 
   const ProblemView({
     super.key,
     required this.question,
     required this.isSolved,
     required this.onSolve,
+    required this.user,
+    required this.onBookmark,
   });
 
   @override
@@ -19,13 +24,15 @@ class ProblemView extends StatefulWidget {
 }
 
 class _ProblemViewState extends State<ProblemView> {
-  late TextEditingController _codeController;
+  final TextEditingController _codeController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    // Pre-fill the text area with starter code
-    _codeController = TextEditingController(text: widget.question.starterCode);
+    // Pre-fill with starter code if available
+    if (widget.question.starterCode.isNotEmpty) {
+      _codeController.text = widget.question.starterCode;
+    }
   }
 
   @override
@@ -34,7 +41,6 @@ class _ProblemViewState extends State<ProblemView> {
     super.dispose();
   }
 
-  // Helper to pick color based on difficulty
   Color _getDifficultyColor(String difficulty) {
     switch (difficulty.toLowerCase()) {
       case 'easy':
@@ -50,46 +56,56 @@ class _ProblemViewState extends State<ProblemView> {
 
   @override
   Widget build(BuildContext context) {
+    bool isBookmarked =
+        widget.user.bookmarkedQuestionIds.contains(widget.question.id);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // -------------------------------------------------------
-          // 1. Header (Title + Badges)
-          // -------------------------------------------------------
+          // 1. Header: Difficulty, Topic, and Bookmark Icon
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Chip(
+                    label: Text(
+                      widget.question.difficulty,
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                    backgroundColor:
+                        _getDifficultyColor(widget.question.difficulty),
+                  ),
+                  const SizedBox(width: 8),
+                  Chip(
+                    label: Text(widget.question.topic),
+                    backgroundColor: Colors.grey.shade200,
+                  ),
+                ],
+              ),
+              // BOOKMARK BUTTON
+              IconButton(
+                onPressed: () => widget.onBookmark(widget.question.id),
+                icon: Icon(
+                  isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+                  color: isBookmarked ? Colors.amber : Colors.grey,
+                  size: 30,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // 2. Title
           Text(
             widget.question.title,
             style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Chip(
-                label: Text(
-                  widget.question.difficulty,
-                  style: const TextStyle(color: Colors.white),
-                ),
-                backgroundColor:
-                    _getDifficultyColor(widget.question.difficulty),
-              ),
-              const SizedBox(width: 8),
-              Chip(
-                label: Text(widget.question.topic),
-                backgroundColor: Colors.grey[200],
-              ),
-            ],
-          ),
-          const Divider(height: 32),
+          const SizedBox(height: 16),
 
-          // -------------------------------------------------------
-          // 2. Question Description (Markdown)
-          // -------------------------------------------------------
-          const Text(
-            "Problem Description",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
+          // 3. Description (Markdown)
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -101,19 +117,49 @@ class _ProblemViewState extends State<ProblemView> {
           ),
           const SizedBox(height: 24),
 
-          // -------------------------------------------------------
-          // 3. The "Switch": Input vs Solution
-          // -------------------------------------------------------
-          if (widget.isSolved) ...[
-            // STATE: SOLVED -> Show Solution
+          // 4. Input Area OR Solution View
+          if (!widget.isSolved) ...[
+            const Text(
+              "Your Solution:",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _codeController,
+              maxLines: 8,
+              decoration: const InputDecoration(
+                hintText: "Type your code or logic here...",
+                border: OutlineInputBorder(),
+                filled: true,
+                fillColor: Colors.white,
+              ),
+              style: const TextStyle(fontFamily: 'monospace'),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: widget.onSolve,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.indigo,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                child: const Text("Submit Answer"),
+              ),
+            ),
+          ] else ...[
+            // Success Message & Solution (This matches your screenshot fixes)
             Container(
+              width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.green.shade50,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.green),
+                border: Border.all(color: Colors.green.shade200),
               ),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Row(
                     children: [
@@ -122,56 +168,20 @@ class _ProblemViewState extends State<ProblemView> {
                       Text(
                         "Answer Submitted! Solution Unlocked.",
                         style: TextStyle(
-                            fontWeight: FontWeight.bold, color: Colors.green),
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green,
+                            fontSize: 16),
                       ),
                     ],
                   ),
-                  const Divider(),
-                  const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text("Official Solution:",
-                        style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Divider(height: 24),
+                  const Text(
+                    "Official Solution:",
+                    style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   MarkdownBody(data: widget.question.solution),
                 ],
-              ),
-            ),
-          ] else ...[
-            // STATE: UNSOLVED -> Show Input
-            const Text(
-              "Your Solution",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _codeController,
-              maxLines: 10,
-              style: const TextStyle(
-                  fontFamily: 'Courier', fontSize: 14), // Monospace font
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: "Write your code or logic here...",
-                filled: true,
-                fillColor: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: () {
-                if (_codeController.text.trim().isNotEmpty) {
-                  widget.onSolve(); // Trigger the Provider logic
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text("Please write some code first!")),
-                  );
-                }
-              },
-              icon: const Icon(Icons.send),
-              label: const Text("SUBMIT SOLUTION"),
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
               ),
             ),
           ],

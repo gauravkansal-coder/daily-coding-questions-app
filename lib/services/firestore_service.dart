@@ -10,54 +10,36 @@ class FirestoreService {
   // 1. Fetch Today's Question
   // ---------------------------------------------------------------------------
   Future<Question?> getTodaysQuestion() async {
-    // Get today's date in "YYYY-MM-DD" format
     String todayDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
 
     try {
-      print('🔍 Looking for question with date: $todayDate');
-
-      // We look for a document ID that matches today's date
       DocumentSnapshot doc =
           await _db.collection('questions').doc(todayDate).get();
-
       if (doc.exists) {
-        print('✅ Question found! Data: ${doc.data()}');
         return Question.fromFirestore(doc);
       } else {
-        print('❌ No question found for date: $todayDate');
-        print('📋 Available question docs: ');
-        // List all docs to debug
-        var snapshot = await _db.collection('questions').get();
-        for (var doc in snapshot.docs) {
-          print('  - ${doc.id}');
-        }
         return null;
       }
     } catch (e) {
-      print("❌ Error fetching question: $e");
-      print("Stack trace: $e");
+      // In production, use a logging service instead of print
       return null;
     }
   }
 
   // ---------------------------------------------------------------------------
-  // 2. Update User Streak (The Core Logic)
+  // 2. Update User Streak (Transaction Safe)
   // ---------------------------------------------------------------------------
   Future<void> submitSolutionAndStreak(String uid, String questionId) async {
     DocumentReference userRef = _db.collection('users').doc(uid);
 
-    // Run as a Transaction to ensure data consistency
     await _db.runTransaction((transaction) async {
       DocumentSnapshot snapshot = await transaction.get(userRef);
-
       if (!snapshot.exists) return;
 
       UserModel user = UserModel.fromFirestore(snapshot);
 
-      // If user already solved this specific question, stop here.
       if (user.solvedQuestionIds.contains(questionId)) return;
 
-      // Calculate Dates
       String today = DateFormat('yyyy-MM-dd').format(DateTime.now());
       String yesterday = DateFormat('yyyy-MM-dd').format(
         DateTime.now().subtract(const Duration(days: 1)),
@@ -65,57 +47,92 @@ class FirestoreService {
 
       int newStreak = user.currentStreak;
 
-      // STREAK LOGIC:
       if (user.lastSolvedDate == yesterday) {
-        // Solved yesterday? Increment streak.
         newStreak++;
       } else if (user.lastSolvedDate != today) {
-        // Missed yesterday? Reset streak to 1.
         newStreak = 1;
       }
-      // (If lastSolvedDate == today, we don't increment, just add the question ID)
 
-      // Update Max Streak if needed
       int newLongest =
           (newStreak > user.longestStreak) ? newStreak : user.longestStreak;
 
-      // Update Firestore
       transaction.update(userRef, {
         'currentStreak': newStreak,
         'longestStreak': newLongest,
         'lastSolvedDate': today,
-        // Add questionId to the list of solved questions
         'solvedQuestionIds': FieldValue.arrayUnion([questionId]),
       });
     });
   }
 
   // ---------------------------------------------------------------------------
-  // 3. Create/Get User Profile
+  // 3. Create User Profile
   // ---------------------------------------------------------------------------
   Future<void> createUserIfNotExists(String uid, String email) async {
     DocumentReference userRef = _db.collection('users').doc(uid);
     DocumentSnapshot doc = await userRef.get();
 
     if (!doc.exists) {
-      // Create new user profile with 0 streak
       UserModel newUser = UserModel(
         uid: uid,
         email: email,
-        username: email.split('@')[0], // Default username from email
+        username: email.split('@')[0],
         currentStreak: 0,
         longestStreak: 0,
         lastSolvedDate: '',
         solvedQuestionIds: [],
+        bookmarkedQuestionIds: [],
       );
       await userRef.set(newUser.toMap());
     }
   }
 
-  // Stream for real-time streak updates on the Home Screen
   Stream<UserModel> getUserStream(String uid) {
     return _db.collection('users').doc(uid).snapshots().map(
           (doc) => UserModel.fromFirestore(doc),
         );
+  }
+
+  // ---------------------------------------------------------------------------
+  // 4. Toggle Bookmark (Add/Remove)
+  // ---------------------------------------------------------------------------
+  Future<void> toggleBookmark(String uid, String questionId) async {
+    DocumentReference userRef = _db.collection('users').doc(uid);
+    DocumentSnapshot doc = await userRef.get();
+
+    if (doc.exists) {
+      UserModel user = UserModel.fromFirestore(doc);
+
+      if (user.bookmarkedQuestionIds.contains(questionId)) {
+        await userRef.update({
+          'bookmarkedQuestionIds': FieldValue.arrayRemove([questionId])
+        });
+      } else {
+        await userRef.update({
+          'bookmarkedQuestionIds': FieldValue.arrayUnion([questionId])
+        });
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // 5. Fetch Multiple Questions by ID (For Bookmarks Screen)
+  // ---------------------------------------------------------------------------
+  Future<List<Question>> getQuestionsByIds(List<String> ids) async {
+    if (ids.isEmpty) return [];
+
+    try {
+      // Parallel fetch for better performance
+      List<DocumentSnapshot> snapshots = await Future.wait(
+        ids.map((id) => _db.collection('questions').doc(id).get()),
+      );
+
+      return snapshots
+          .where((doc) => doc.exists)
+          .map((doc) => Question.fromFirestore(doc))
+          .toList();
+    } catch (e) {
+      return [];
+    }
   }
 }

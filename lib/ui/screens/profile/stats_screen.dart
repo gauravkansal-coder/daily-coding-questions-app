@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:daily_coding_questions_app/models/user_model.dart';
+import 'package:daily_coding_questions_app/ui/screens/home/bookmarks_screen.dart'; // Make sure to import this
 
 class StatsScreen extends StatelessWidget {
   final UserModel user;
@@ -47,9 +48,34 @@ class StatsScreen extends StatelessWidget {
               isFullWidth: true,
             ),
 
+            const SizedBox(height: 16),
+
+            // 3. Saved Questions Button (NEW)
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => BookmarksScreen(user: user),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.bookmark),
+                label: const Text("View Saved Questions"),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+
             const SizedBox(height: 32),
 
-            // 3. Consistency (Last 7 Days)
+            // 4. Consistency Visual (Last 7 Days)
             const Text(
               "Last 7 Days Consistency",
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -65,7 +91,7 @@ class StatsScreen extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: List.generate(7, (index) {
-                  // Calculate date for this index (6 days ago -> Today)
+                  // Logic: Calculate date for this index (6 days ago -> Today)
                   DateTime date =
                       DateTime.now().subtract(Duration(days: 6 - index));
                   String dateId = DateFormat('yyyy-MM-dd').format(date);
