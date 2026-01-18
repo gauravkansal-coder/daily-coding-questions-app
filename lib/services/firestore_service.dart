@@ -15,7 +15,7 @@ class FirestoreService {
 
     try {
       print('🔍 Looking for question with date: $todayDate');
-      
+
       // We look for a document ID that matches today's date
       DocumentSnapshot doc =
           await _db.collection('questions').doc(todayDate).get();
